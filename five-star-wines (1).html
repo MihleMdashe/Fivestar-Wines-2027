@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Five Star Wines</title>
+<!-- Preview wrapper only. The reusable component is everything between the START and END markers. -->
+<style>
+  html, body { margin: 0; padding: 0; }
+  body { background: #efe7d6; }
+</style>
+</head>
+<body>
+<!-- FIVE STAR WINES COMPONENT: START -->
+<!-- ============================================================
+  FIVE STAR WINES | tap-to-expand wine category cards
+  Self-contained interactive component for Shorthand.
+  Styled after your poster template: photo-backed taupe canvas,
+  thin burgundy frame, ivory cards, serif category titles.
+
+  DATA: the Platter's South African Wine Guide 2027 five-star list
+  (transcribed from your screenshots, 17 November 2026). The cards
+  follow the guide's own categories, in the same order: red
+  varieties, red blends, white varieties, white blends, Cap
+  Classique, sweet and fortified styles, brandy, husk spirit.
+  Please proofread against the source before publishing.
+
+  ADD IT TO A SHORTHAND STORY
+  1. Add a section and choose Custom HTML.
+  2. Paste this whole file into the code panel.
+  3. The editor shows the code only. Select Preview to see it work.
+  4. Optional: save the section as a template to reuse it.
+
+  EDIT THE LIST (FSW_DATA in the script below)
+  - One category is one entry in FSW_DATA: a name and its wines.
+  - A vintage at the end of a wine line (or NV) moves to the right
+    of the dotted line automatically. Entries without a year show
+    the name only, like the brandies.
+  - Card counts update automatically. Lists of 28 wines or more
+    spread across three columns on wide screens.
+  - Give a category an "img" to give its tile a photo panel, like
+    the poster. Without one it stays a clean text tile.
+  - build.py in this folder regenerates this file from the same
+    data, if you prefer editing Python.
+
+  FONTS
+  - Body text uses Proxima Nova with system fallbacks, so it
+    renders in Proxima Nova wherever your site loads the font.
+  - Titles use the serif in --fsw-font-display; swap in your
+    brand display font there if you have one.
+
+  SETTINGS (script at the bottom)
+  - ONE_AT_A_TIME: opening a category closes the others. Default true.
+  - SCROLL_INTO_VIEW: gently scroll the opened card into view. Default true.
+  - OPEN_FIRST: start with the first category open. Default false.
+
+  THE BACKGROUND
+  - The canvas is a photo under a warm taupe tint, with a light
+    paper grain on top. Desktop uses --fsw-bg-desktop, phones
+    use --fsw-bg-mobile; swap either for a hosted URL when
+    pasting into Shorthand, or keep the relative paths when
+    hosting the whole folder (add both images to your repo).
+    Reveal more of the photos by lowering --fsw-bg-strength
+    (1 hides them completely).
+
+  RESTYLE IT
+  - Colours, fonts and sizes live in the DESIGN SETTINGS block at
+    the top of the <style> section. Change the variables only.
+============================================================ -->
+<style>
+  /* ===== DESIGN SETTINGS: change these to match your site ===== */
+  .fsw {
+    --fsw-canvas: #d8c9ae;        /* sandy taupe section canvas */
+    --fsw-frame: #5d2233;         /* burgundy frame line */
+    --fsw-wine: #6b2737;         /* accent: plus icons, hint, hover */
+    --fsw-gold: #b3924f;         /* the five stars */
+    --fsw-card: #f8f2e3;          /* ivory card background */
+    --fsw-ink: #2b2119;           /* main text */
+    --fsw-muted: #6f604c;         /* secondary text */
+    --fsw-line: #e2d6bd;          /* row dividers on ivory */
+    --fsw-dots: #b9a888;          /* dotted leader lines */
+    --fsw-hairline: rgba(93, 34, 51, 0.3);
+    --fsw-onphoto: #fbf5e8;       /* title over a photo */
+    --fsw-scrim: linear-gradient(180deg, rgba(32, 17, 9, 0.80) 0%, rgba(32, 17, 9, 0.34) 30%, rgba(32, 17, 9, 0) 58%);  /* shade behind a photo title */
+    --fsw-bg-desktop: url("images/fsw-background-desktop.jpg");  /* desktop background photo: use a hosted URL when pasting into Shorthand */
+    --fsw-bg-mobile: url("images/fsw-background-mobile.jpg");    /* phone background photo: use a hosted URL when pasting into Shorthand */
+    --fsw-bg: var(--fsw-bg-desktop);  /* the section uses this; phones swap it below */
+    --fsw-bg-strength: 0.88;  /* taupe overlay: 1 hides the photos completely, lower shows more of them */
+    --fsw-font-display: Georgia, 'Times New Roman', serif;
+    --fsw-font-body: 'Proxima Nova', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+    --fsw-size-tile: 19px;
+    --fsw-size-open: 24px;
+    --fsw-size-wine: 20px;
+    --fsw-size-year: 16px;
+    --fsw-size-meta: 13px;
+  }
+
+  /* Base: scoped so the story's own styles stay outside */
+  .fsw {
+    position: relative;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 38px 24px 42px;
+    font-family: var(--fsw-font-body);
+    color: var(--fsw-ink);
+    text-align: left;
+    line-height: 1.45;
+    background-color: var(--fsw-canvas);
+    background-image:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23g)' opacity='0.05'/></svg>"),
+      linear-gradient(rgba(216, 201, 174, var(--fsw-bg-strength)), rgba(216, 201, 174, var(--fsw-bg-strength))),
+      var(--fsw-bg);
+    background-size: 260px 260px, 100% 100%, cover;
+    background-position: 0 0, 0 0, center;
+    background-repeat: repeat, no-repeat, no-repeat;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Phones use the mobile photo */
+  @media (max-width: 759px) {
+    .fsw { --fsw-bg: var(--fsw-bg-mobile); }
+  }
+  /* thin burgundy frame, inset from the edges like the poster */
+  .fsw::before {
+    content: "";
+    position: absolute;
+    inset: 14px;
+    border: 1px solid var(--fsw-frame);
+    pointer-events: none;
+  }
+  .fsw *, .fsw *::before, .fsw *::after { box-sizing: border-box; }
+
+  /* Intro: blurb, stars, tap hint. Delete this block if your story already introduces the section. */
+  .fsw-head { max-width: 680px; margin: 0 auto 30px; text-align: center; }
+  .fsw-sub { margin: 0; font-size: 17px; color: var(--fsw-ink); line-height: 1.55; }
+  .fsw-stars { margin: 14px 0 12px; color: var(--fsw-gold); font-size: 17px; letter-spacing: 9px; text-indent: 9px; }
+  .fsw-hint { margin: 0; font-size: 16px; font-weight: 600; color: var(--fsw-frame); line-height: 1.5; }
+
+  /* Category tiles: one per guide category */
+  .fsw-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  @media (min-width: 760px) {
+    .fsw-grid { grid-template-columns: repeat(auto-fill, minmax(195px, 1fr)); gap: 14px; }
+  }
+  .fsw-card { background: var(--fsw-card); border: 1px solid var(--fsw-hairline); border-radius: 12px; padding: 13px 15px; }
+  .fsw-card[open] {
+    grid-column: 1 / -1;
+    padding: 16px 20px 20px;
+    box-shadow: 0 16px 36px rgba(58, 38, 22, 0.18);
+  }
+
+  /* The tappable tile front */
+  .fsw-toggle {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    list-style: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .fsw-toggle::-webkit-details-marker { display: none; }
+  .fsw-toggle::marker { content: none; }
+  .fsw-toggle:focus-visible { outline: 2px solid var(--fsw-wine); outline-offset: 3px; }
+
+  .fsw-cat-text { display: block; }
+  .fsw-cat-name {
+    display: block;
+    font-family: var(--fsw-font-display);
+    font-size: var(--fsw-size-tile);
+    font-weight: 400;
+    line-height: 1.2;
+    color: var(--fsw-ink);
+    transition: color 0.2s ease;
+  }
+  .fsw-toggle:hover .fsw-cat-name { color: var(--fsw-wine); }
+  .fsw-cat-meta { display: block; margin-top: 3px; font-size: var(--fsw-size-meta); color: var(--fsw-muted); }
+
+  /* Plus icon, becomes a minus when open */
+  .fsw-plus { position: relative; flex: 0 0 auto; width: 22px; height: 22px; }
+  .fsw-plus::before, .fsw-plus::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    background: var(--fsw-wine);
+    border-radius: 2px;
+    transition: transform 0.3s ease;
+  }
+  .fsw-plus::before { width: 18px; height: 2px; transform: translate(-50%, -50%); }
+  .fsw-plus::after { width: 2px; height: 18px; transform: translate(-50%, -50%); }
+  .fsw-card[open] .fsw-plus::after { transform: translate(-50%, -50%) rotate(90deg); }
+
+  /* The open card: a header bar, then the wine list */
+  .fsw-card[open] .fsw-cat-name { font-size: var(--fsw-size-open); }
+  .fsw-card[open] > .fsw-toggle { border-bottom: 1px solid var(--fsw-line); padding-bottom: 12px; }
+  .fsw-card[open] > .fsw-panel { padding: 8px 0 6px; animation: fsw-reveal 0.35s ease both; }
+  @keyframes fsw-reveal {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .fsw-list { list-style: none; margin: 2px 0 6px; padding: 0; }
+  .fsw-item {
+    padding: 9px 0 7px;
+    border-bottom: 1px solid var(--fsw-line);
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .fsw-item:last-child { border-bottom: 0; padding-bottom: 4px; }
+  .fsw-item-main { display: flex; align-items: baseline; gap: 10px; }
+  .fsw-wine { font-family: var(--fsw-font-body); font-size: var(--fsw-size-wine); font-weight: 500; line-height: 1.3; flex: 0 1 auto; min-width: 0; overflow-wrap: break-word; }
+  .fsw-leader { flex: 1 1 14px; min-width: 12px; border-bottom: 2px dotted var(--fsw-dots); transform: translateY(-5px); }
+  .fsw-year { flex: 0 0 auto; font-size: var(--fsw-size-year); font-weight: 500; color: var(--fsw-muted); white-space: nowrap; }
+  .fsw-empty { margin: 10px 0 12px; font-size: 15px; font-style: italic; color: var(--fsw-muted); }
+
+  /* Two columns of wines on wider screens; three for the longest lists */
+  @media (min-width: 760px) {
+    .fsw-card[open] > .fsw-panel { columns: 2; column-gap: 40px; }
+  }
+  @media (min-width: 1000px) {
+    .fsw-card.fsw-big[open] > .fsw-panel { columns: 3; column-gap: 36px; }
+  }
+
+  /* Optional photo tile: add an "img" to a category in FSW_DATA */
+  .fsw-card.has-photo { padding: 10px; }
+  .fsw-card.has-photo .fsw-toggle { display: block; }
+  .fsw-media { position: relative; display: block; border-radius: 9px; overflow: hidden; border: 1px solid var(--fsw-hairline); }
+  .fsw-img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover; }
+  .fsw-toggle:hover .fsw-img { filter: brightness(1.04); }
+  .fsw-media::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--fsw-scrim);
+    pointer-events: none;
+  }
+  .fsw-card.has-photo .fsw-cat-name {
+    position: absolute;
+    top: 13px;
+    left: 10px;
+    right: 10px;
+    text-align: center;
+    color: var(--fsw-onphoto);
+    letter-spacing: 1px;
+    text-shadow: 0 1px 3px rgba(28, 13, 6, 0.65), 0 2px 14px rgba(28, 13, 6, 0.55);
+  }
+  .fsw-meta-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 9px; }
+  .fsw-card.has-photo .fsw-meta-row { margin-top: 0; padding: 11px 6px 2px; }
+  .fsw-card.has-photo[open] {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    column-gap: 26px;
+    align-items: start;
+    padding: 14px;
+  }
+  .fsw-card.has-photo[open] > .fsw-toggle { grid-column: 1; border-bottom: 0; padding-bottom: 0; }
+  .fsw-card.has-photo[open] .fsw-cat-name { font-size: 22px; }
+  .fsw-card.has-photo[open] > .fsw-panel { grid-column: 2; }
+  @media (max-width: 759px) {
+    .fsw-card.has-photo[open] { grid-template-columns: 1fr; }
+    .fsw-card.has-photo[open] .fsw-img { aspect-ratio: 16 / 9; }
+  }
+
+  /* Footnote */
+  .fsw-note { margin: 28px 0 0; text-align: center; font-size: 15px; color: var(--fsw-muted); line-height: 1.5; }
+
+  /* Respect readers who prefer no motion */
+  @media (prefers-reduced-motion: reduce) {
+    .fsw * { transition: none !important; animation: none !important; }
+  }
+</style>
+
+<section class="fsw" aria-label="Platter's five star wines">
+  <header class="fsw-head">
+    <p class="fsw-sub">These are the wines achieving the guide's highest rating, five stars, or 95 and above points. Refer to the A-Z section for the rating and tasting note for each wine.</p>
+    <p class="fsw-stars" aria-hidden="true">&#9733; &#9733; &#9733; &#9733; &#9733;</p>
+    <p class="fsw-hint">Tap a category to open its wine list. Tap it again to close.</p>
+  </header>
+
+  <div class="fsw-grid">
+    <noscript><p class="fsw-note">Please enable JavaScript to view the wine list.</p></noscript>
+  </div>
+
+  <p class="fsw-note">Source: Platter's South African Wine Guide 2027.</p>
+</section>
+
+<script>
+/* Five Star Wines: data plus tap-to-expand behaviour. Edit the list
+   in FSW_DATA; the cards, counts and column layout build themselves.
+   A trailing vintage year (or NV) moves to the right of the dotted
+   line. Entries without a year show the name only. Give a category
+   an "img" for a photo tile. */
+(function () {
+  var SETTINGS = {
+    ONE_AT_A_TIME: true,    /* opening a category closes the others */
+    SCROLL_INTO_VIEW: true, /* gently scroll the opened card into view */
+    OPEN_FIRST: false       /* start with the first category open */
+  };
+
+  var FSW_DATA = [
+  {
+    "cat": "Barbera",
+    "wines": [
+      "Diemersdal Prospect 2024"
+    ]
+  },
+  {
+    "cat": "Cabernet Franc",
+    "wines": [
+      "Hogan Mirror For The Sun 2025",
+      "Lynx Reserve 2021",
+      "Villiera The Clan 2022",
+      "Zorgvliet 2024"
+    ]
+  },
+  {
+    "cat": "Cabernet Sauvignon",
+    "wines": [
+      "Atlas Swift Vespertine Wellington 2024",
+      "Black Elephant Amazing Grace 2021",
+      "Boekenhoutskloof Franschhoek 2024",
+      "Boekenhoutskloof Stellenbosch 2024",
+      "Dalla Cia Classico 2024",
+      "DeMorgenzon Reserve 2023",
+      "Durbanville Hills The Castle Of Good Hope 2024",
+      "Ernie Els Major Series 2024",
+      "Le Riche 2024",
+      "Le Riche Prof Schoeman 2024",
+      "Le Riche Reserve 2023",
+      "Le Riche Simonsberg 2023",
+      "Metzer & Holfeld Metzer 2025",
+      "Oldenburg 8th Element 2023",
+      "Oldenburg Per Se 2023",
+      "Rainbow's End 2024",
+      "Rustenberg Peter Barlow 2024"
+    ]
+  },
+  {
+    "cat": "Cinsault Noir",
+    "wines": [
+      "City On A Hill WO Swartland 2025",
+      "Savage Follow The Line 2025",
+      "Wildeberg Terroirs 2024"
+    ]
+  },
+  {
+    "cat": "Grenache Noir",
+    "wines": [
+      "ArtiSons The Phantom 2024",
+      "David & Nadia 2025",
+      "Savage Darling 2025"
+    ]
+  },
+  {
+    "cat": "Merlot",
+    "wines": [
+      "Bein Reserve 2023",
+      "Fleur Du Cap 2023",
+      "Meerlust 2023",
+      "Shannon Black 2022",
+      "The High Road Reserve 2023"
+    ]
+  },
+  {
+    "cat": "Petit Verdot",
+    "wines": [
+      "Glen Carlou 2021",
+      "La Bri Double Door 2025"
+    ]
+  },
+  {
+    "cat": "Pinotage",
+    "wines": [
+      "Aaldering 2024",
+      "Anura Signature 2023",
+      "Beeslaar 2024",
+      "Bruwer Vintners Liberté 2024",
+      "Chamonix Greywacke 2022",
+      "De Grendel Amandelboord 2024",
+      "Delheim Vera Cruz 2023",
+      "Diemersdal Reserve 2025",
+      "Diemersdal The Journal 2024",
+      "Flagstone Writer's Block 2023",
+      "Francois Van Niekerk 2024",
+      "Glen Carlou Collection 2023",
+      "Grangehurst 2014",
+      "Hasher Batrachella 2024",
+      "Illimis 2025",
+      "L'Avenir Single Block 2022",
+      "Longridge Maandans 2023",
+      "McFarlane Saturday's Child 2025",
+      "Survivor Reserve 2024",
+      "Wellington La Cave 2023",
+      "Wolf & Woman 2025",
+      "Woolworths Bruwer Vintners 2024"
+    ]
+  },
+  {
+    "cat": "Pinot Noir",
+    "wines": [
+      "Kershaw Kogelberg Sandstone PN115 2023",
+      "Kershaw Valley Ridge Gravel Over Clay PN777 2023",
+      "Tesselaarsdal 2025"
+    ]
+  },
+  {
+    "cat": "Shiraz/Syrah",
+    "wines": [
+      "ArtiSons Blueberry Hill Shiraz 2024",
+      "Boschkloof Epilogue 2024",
+      "Dewaldt Heyns Weathered Hands Shiraz 2022",
+      "Gabrielskloof Syrah On Shale 2024",
+      "JC Wickens Swerwer Shiraz 2025",
+      "Metzer & Holfeld Metzer Shiraz 2024",
+      "Mullineux Signature Syrah 2024",
+      "Off The Record Syrah 2024",
+      "Old Road Pepper Wind Syrah 2025",
+      "Rall Ceres Plateau Syrah 2025",
+      "Rhebokskloof Black Marble Hill Syrah 2021",
+      "Rogge Cloof De Knolle Fonteyn Syrah 2025",
+      "Rogge Cloof Emineo Syrah 2025",
+      "Saga Sons Of Sugarland Syrah 2025",
+      "Saronsberg Shiraz 2024",
+      "Savage Girl Next Door 2025",
+      "Saxenburg Select Syrah 2022",
+      "Scions Of Sinai Swanesang 2025",
+      "Stark-Condé Stellenbosch Syrah 2024",
+      "The Foundry Syrah 2022",
+      "Torero Pasiphaë Syrah 2025"
+    ]
+  },
+  {
+    "cat": "Touriga Nacional",
+    "wines": [
+      "JC Wickens Swerwer 2025"
+    ]
+  },
+  {
+    "cat": "Red Blends, Cape Bordeaux",
+    "wines": [
+      "Alto MPHS 2022",
+      "Babylonstoren Nebukadnesar 2024",
+      "Beau Constantia Aidan 2022",
+      "Beau Constantia Lucca 2022",
+      "Diemersdal Private Collection 2024",
+      "Mvemve Raats MR De Compostella 2023",
+      "Rainbow's End Family Reserve 2024",
+      "Rustenberg John X Merriman 2024",
+      "Saronsberg Seismic 2024",
+      "Spier Frans K. Smit CWG Auction Sentinel Red 2022",
+      "Warwick Trilogy 2023",
+      "Zonnebloem Lauréat 2023",
+      "Zorgvliet Richelle 2022"
+    ]
+  },
+  {
+    "cat": "Red Blends, With Pinotage",
+    "wines": [
+      "Beaumont Vitruvian 2022"
+    ]
+  },
+  {
+    "cat": "Red Blends, Shiraz/Syrah-based",
+    "wines": [
+      "Erika Obermeyer Erika O Syrah-Grenache Noir-Cinsault 2022",
+      "Fairview Cyril Back 2023",
+      "Lingen 2024",
+      "Saronsberg Full Circle 2024"
+    ]
+  },
+  {
+    "cat": "Red Blends, Other",
+    "wines": [
+      "Anysbos Tesame 2024",
+      "Boschkloof Conclusion 2024",
+      "Brookdale Twenty Field Blend 2025",
+      "Glenelly Estate Red 2019",
+      "Ken Forrester Three Halves 2024",
+      "Rust En Vrede Estate 2023",
+      "SixLegs Genesis 2024",
+      "Steilpad Silent Workhorse 2025",
+      "The Ahrens Family Soils Of Paarl Red 2024",
+      "Thistle & Weed Nastergal 2024",
+      "Vuurberg Reserve Red 2024",
+      "Warwick Professor Black Pitch Black 2024"
+    ]
+  },
+  {
+    "cat": "Chardonnay",
+    "wines": [
+      "Aaldering 2025",
+      "Atlas Swift Wine Of Origin Cape South Coast 2025",
+      "Atlas Swift Wine Of Origin Robertson 2025",
+      "Benguela Cove 2025",
+      "BLANKbottle Seelug 2025",
+      "Callender Peak 2025",
+      "Capensis 2023",
+      "Capensis Fijnbosch 2022",
+      "Capensis Silene 2025",
+      "Creation Ridge 2025",
+      "Creation Glenn's Chardonnay 2025",
+      "Creation The Art Of Chardonnay 2025",
+      "Crystallum Ferrum 2025",
+      "Draaiboek Kinkel 2025",
+      "Durbanville Hills The Cableway 2025",
+      "Epicurean 2024",
+      "IONA Fynbos 2024",
+      "IONA Kloof 2024",
+      "Jordan CWG Auction 2025",
+      "Kara-Tara 2025",
+      "Kershaw Elgin 2023",
+      "Kleine Zalze Vineyard Selection 2025",
+      "Leeu Passant Stellenbosch 2024",
+      "Litigo 2025",
+      "Mont Rochelle Miko White 2025",
+      "Oak Valley Groenlandberg 2025",
+      "Oak Valley Tabula Rasa CY95 2023",
+      "Oldenburg 2025",
+      "Oldenburg Una V 2025",
+      "Paul Wallace Reflection 2025",
+      "Plaisir Grand Plaisir White 2024",
+      "Rustenberg Five Soldiers 2025",
+      "Schultz Heldervue 2025",
+      "Shannon Oscar Browne 2025",
+      "Thamnus 2024",
+      "Thelema 2024",
+      "Trizanne Benede-Duivenhoksrivier 2025",
+      "Villion 2025",
+      "Whalehaven Seascape 2025",
+      "Woolworths Neil Ellis Reserve Collection 2024",
+      "Zevenwacht Estate 2025",
+      "Zevenwacht Z-Collection 2025"
+    ]
+  },
+  {
+    "cat": "Chenin Blanc",
+    "wines": [
+      "AA Badenhorst Grensloos 2025",
+      "Alheit Fire By Night 2025",
+      "Alheit Huilkrans 2025",
+      "Alheit Magnetic North 2025",
+      "Angus Paul Fantamtango 2025",
+      "ArtiSons The Mothership 2025",
+      "Axle 2025",
+      "Beaumont Hope Marguerite 2025",
+      "Bellevue Heritage 2025",
+      "Bellingham Cape Town Old Vine 2025",
+      "BLANKbottle Ultra 2025",
+      "Carinus Polkadraai Heuwels 2025",
+      "Carinus Rooidraai 2025",
+      "Cavalli Reserve 2025",
+      "City On A Hill Earth 2024",
+      "City On A Hill WO Swartland 2025",
+      "Corney Stellenbosch 2025",
+      "Creation Cool Climate 2025",
+      "David & Nadia Hoë-Steen 2025",
+      "David & Nadia Langland 2025",
+      "De Trafford 2025",
+      "Fairview Old Vine Project Steen 2025",
+      "Hogan 2025",
+      "Illimis 2025",
+      "Kaapzicht The 1947 2025",
+      "Ken Forrester The FMC 2025",
+      "Kleine Zalze Heritage Vineyards 2025",
+      "Lievland Old Vine 2025",
+      "Metzer & Holfeld 3 Miles To Milk Bay 2025",
+      "Metzer & Holfeld Montane 2025",
+      "Miles Mossop Stellenbosch 2025",
+      "Opstal Bergsteen 2025",
+      "Paulus Bartàs 2025",
+      "Quoin Rock 2025",
+      "Raats Fountain Terroir Specific 2025",
+      "Radford Dale The Renaissance Of Chenin Blanc 2025",
+      "Rall Noa 2025",
+      "Saga Patatsfontein Steen 2025",
+      "Scions Of Sinai Granietsteen 2025",
+      "Stark-Condé Monk Stone 2025",
+      "Stellenrust Old Bushvine Secrets & Lies 2025",
+      "Strydom Danièle 2025",
+      "Swartberg 2024",
+      "Tembela 2025",
+      "The Ahrens Family Kwarts Van Die Paarl 2024",
+      "The Bothey Harmony 2025",
+      "Thistle & Weed Brandnetel 2025",
+      "Thorne & Daughters Cat's Cradle 2025",
+      "Warwick Old Vine 2025",
+      "Wolf & Woman Always Present Often Invisible 2025",
+      "Wolf & Woman 2025",
+      "Zevenwacht Z-Collection 2025"
+    ]
+  },
+  {
+    "cat": "Cinsault Blanc",
+    "wines": [
+      "ArtiSons The Albatros 2025"
+    ]
+  },
+  {
+    "cat": "Clairette Blanche",
+    "wines": [
+      "Daschbosch Avon 2025"
+    ]
+  },
+  {
+    "cat": "Colombard",
+    "wines": [
+      "Rebel Rebel Old Vine 2024"
+    ]
+  },
+  {
+    "cat": "Grenache Blanc",
+    "wines": [
+      "Donkiesbaai 2025",
+      "Fairview 2025",
+      "Terra Loci Déjà Vu 2025",
+      "The Foundry 2023"
+    ]
+  },
+  {
+    "cat": "Grenache Gris",
+    "wines": [
+      "Momento 2025"
+    ]
+  },
+  {
+    "cat": "Muscat d'Alexandrie",
+    "wines": [
+      "Colombo There's Something About You 2025"
+    ]
+  },
+  {
+    "cat": "Roussanne",
+    "wines": [
+      "La Bri Double Door 2025"
+    ]
+  },
+  {
+    "cat": "Sauvignon Blanc",
+    "wines": [
+      "Almenkerk 2025",
+      "Buitenverwachting Hussey's Vlei 2025",
+      "Constantia Glen 2025",
+      "De Grendel Koetshuis 2025",
+      "Diemersdal Reserve 2026",
+      "Diemersdal The Globe 2025",
+      "Diemersdal The Journal 2025",
+      "Diemersdal Wild Horseshoe 2025",
+      "Eagles' Nest Reserve 2025",
+      "Erika Obermeyer Erika O 2024",
+      "Escape Reserve 2024",
+      "Flagstone The Surge 2025",
+      "Fryer's Cove Hollebaksstrandfontein 2025",
+      "Groot Phesantekraal Marizanne 2025",
+      "Hermanuspietersfontein Kat 2025",
+      "IONA Wild Ferment 2025",
+      "Klein Constantia Clara 2025",
+      "Klein Constantia Perdeblokke 2025",
+      "Klein Roosboom Blanc Fumé 2025",
+      "Kleine Zalze Family Reserve 2025",
+      "Lomond Ben Nevis 2025",
+      "Lomond Sugarbush 2025",
+      "Miles Mossop Stellenbosch 2025",
+      "Nitida Golden Orb 2025",
+      "Paul Clüver 2026",
+      "Thorne & Daughters Snakes & Ladders 2025",
+      "Tokara Reserve Collection 2025",
+      "Trizanne Napier Blanc Fumé 2025",
+      "Woolworths Paul Clüver 2026"
+    ]
+  },
+  {
+    "cat": "Semillon",
+    "wines": [
+      "Alheit Monument 2025",
+      "André Van Rensburg Limited Release 2024",
+      "Bizoe Morningstar 2022",
+      "JC Wickens Wolwekop 2024",
+      "Leeu Passant Franschhoek 2025",
+      "Old Road Grand-Mère 2025",
+      "Rickety Bridge Regna Loca 2025",
+      "Thorne & Daughters Paper Kite 2025"
+    ]
+  },
+  {
+    "cat": "Verdelho",
+    "wines": [
+      "BLANKbottle Aasvoël 2024"
+    ]
+  },
+  {
+    "cat": "White Blends, Cape Bordeaux",
+    "wines": [
+      "Cederberg David Nieuwoudt Ghost Corner The Bowline 2025",
+      "Constantia Glen Two 2024",
+      "Delaire Graff White Reserve 2024",
+      "Durbanville Hills Tangram Sauvignon Blanc-Semillon 2025",
+      "Groot Constantia Gouverneurs Reserve Estate White 2025",
+      "Savage White 2025"
+    ]
+  },
+  {
+    "cat": "White Blends, Other",
+    "wines": [
+      "AA Badenhorst Kalmoesfontein 2024",
+      "Ashbourne Sandstone 2025",
+      "Bellingham Freda 2025",
+      "BLANKbottle Orbito Frontal Cortex 2025",
+      "Brookdale Sixteen Field Blend 2025",
+      "Cape Collective Epic White 2025",
+      "Fairview Beryl Back 2025",
+      "Holden Manz Proprietors' Blend White 2025",
+      "Idun Clergerie 2025",
+      "Joostenberg Fairhead 2025",
+      "Lomond Snowbush 2025",
+      "Momento Chenin Blanc-Verdelho 2025",
+      "Sadie Twiswind 2025",
+      "Stark-Condé The Field Blend 2025",
+      "Steilpad Beyond The Rock 2025",
+      "Stellenbosch Hills 1707 Reserve White 2025",
+      "The Fledge & Co Vagabond 2024",
+      "Thistle & Weed Khakibos 2025",
+      "Thorne & Daughters Rocking Horse 2024",
+      "Trizanne The Search 2022",
+      "Van Wyk Olivia Grace 2025",
+      "Vondeling Babiana 2025"
+    ]
+  },
+  {
+    "cat": "Cap Classique",
+    "wines": [
+      "Anthonij Rupert Blanc De Blancs 2022",
+      "Chamonix Blanc De Blancs 2023",
+      "Domaine Des Dieux Lady Ashleigh 2021",
+      "Graham Beck Magnum Collection Blanc De Blancs 2020",
+      "Graham Beck Magnum Collection Ultra Brut 2018",
+      "Graham Beck Cuvée Clive 2019",
+      "Paul René Blanc De Blancs Extra Brut 2022",
+      "Pieter Ferreira Blanc De Blancs 2021",
+      "Thelema Brut 2019"
+    ]
+  },
+  {
+    "cat": "Dessert Wine, Fortified",
+    "wines": [
+      "Jakkalsvlei Hanepoot 2026",
+      "Nuy Barbieri Idro 2017",
+      "The Fledge & Co Hatchi Hanepoot OVP 1932 2021",
+      "The Saldanha Wine & Spirit Co Hanepoot Jerepigo #20 2017"
+    ]
+  },
+  {
+    "cat": "Natural Sweet",
+    "wines": [
+      "Klein Constantia Vin De Constance 2023"
+    ]
+  },
+  {
+    "cat": "Noble Late Harvest",
+    "wines": [
+      "Boschendal Vin d'Or 2025",
+      "Delheim Edelspatz 2024",
+      "Joostenberg Chenin Blanc Noble Late Harvest 2025",
+      "Nederburg Noble Late Harvest 2025",
+      "Woolworths Noble Late Harvest 2025"
+    ]
+  },
+  {
+    "cat": "Vin de Paille/Straw Wine",
+    "wines": [
+      "Donkiesbaai Hooiwijn 2025",
+      "Keermont Fleurfontein 2025",
+      "Mullineux Olerasay 6° Straw Wine NV"
+    ]
+  },
+  {
+    "cat": "Port-Style",
+    "wines": [
+      "Boplaas Cape Tawny Single Harvest 20 Year Old 2006",
+      "Delaire Graff Cape Vintage 2024",
+      "Jakkalsvlei Lord Jackal Cape Vintage Reserve 2024",
+      "KWV Cape Tawny NV"
+    ]
+  },
+  {
+    "cat": "Sherry-Style",
+    "wines": [
+      "The Saldanha Wine & Spirit Co Pale Dry #17 NV",
+      "The Saldanha Wine & Spirit Co PC #19 NV"
+    ]
+  },
+  {
+    "cat": "Brandy",
+    "wines": [
+      "Avante Founders' Fifteen",
+      "Boplaas Potstill Reserve 21 Years Single Cask",
+      "Boplaas Potstill Reserve 20 Years",
+      "Boschendal XXO",
+      "Karo Premium XO",
+      "KWV Centenary",
+      "KWV Nexus",
+      "KWV XXO",
+      "KWV Cellar Reserve XO Potstill",
+      "KWV Signature Release VS",
+      "KWV 15 Year Old",
+      "KWV 12 Year Old",
+      "KWV 10 Year Old",
+      "Old Road Distillery 15",
+      "Tokara XO Potstill",
+      "Van Ryn 20 Year Old Potstill",
+      "Van Ryn 15 Year Old Potstill",
+      "Van Ryn 12 Year Old Potstill"
+    ]
+  },
+  {
+    "cat": "Husk Spirit",
+    "wines": [
+      "Dalla Cia 10 Year Old Celebration Cabernet Sauvignon-Merlot"
+    ]
+  }
+];
+
+  function el(tag, cls, text) {
+    var node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (text != null) node.textContent = text;
+    return node;
+  }
+
+  function splitYear(entry) {
+    var m = String(entry).match(/\s((?:19|20)\d{2}|NV)$/);
+    if (m) return { name: entry.slice(0, m.index), year: m[1] };
+    return { name: entry, year: "" };
+  }
+
+  function wineRow(entry) {
+    var parts = splitYear(entry);
+    var item = el("li", "fsw-item");
+    var main = el("div", "fsw-item-main");
+    main.appendChild(el("span", "fsw-wine", parts.name));
+    if (parts.year) {
+      var leader = el("span", "fsw-leader");
+      leader.setAttribute("aria-hidden", "true");
+      main.appendChild(leader);
+      main.appendChild(el("span", "fsw-year", parts.year));
+    }
+    item.appendChild(main);
+    return item;
+  }
+
+  function countText(n) {
+    return n + (n === 1 ? " wine" : " wines");
+  }
+
+  function buildCard(cat) {
+    var card = el("details", "fsw-card");
+    if (cat.img) card.classList.add("has-photo");
+    if (cat.wines.length >= 28) card.classList.add("fsw-big");
+
+    var summary = el("summary", "fsw-toggle");
+
+    if (cat.img) {
+      var media = el("span", "fsw-media");
+      var img = el("img", "fsw-img");
+      img.src = cat.img;
+      img.alt = "";
+      img.loading = "lazy";
+      media.appendChild(img);
+      media.appendChild(el("span", "fsw-cat-name", cat.cat));
+      summary.appendChild(media);
+    } else {
+      var text = el("span", "fsw-cat-text");
+      text.appendChild(el("span", "fsw-cat-name", cat.cat));
+      summary.appendChild(text);
+    }
+
+    var metaRow = el("span", "fsw-meta-row");
+    metaRow.appendChild(el("span", "fsw-cat-meta", countText(cat.wines.length)));
+    var plus = el("span", "fsw-plus");
+    plus.setAttribute("aria-hidden", "true");
+    metaRow.appendChild(plus);
+    summary.appendChild(metaRow);
+    card.appendChild(summary);
+
+    var panel = el("div", "fsw-panel");
+    var list = el("ul", "fsw-list");
+    if (cat.wines.length) {
+      cat.wines.forEach(function (entry) { list.appendChild(wineRow(entry)); });
+    } else {
+      list.appendChild(el("p", "fsw-empty", "List coming soon."));
+    }
+    panel.appendChild(list);
+    card.appendChild(panel);
+    return card;
+  }
+
+  function render(root) {
+    var grid = root.querySelector(".fsw-grid");
+    if (!grid) return;
+    FSW_DATA.forEach(function (cat) { grid.appendChild(buildCard(cat)); });
+  }
+
+  function enhance(root) {
+    var cards = [].slice.call(root.querySelectorAll(".fsw-card"));
+    if (!cards.length) return;
+    var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    root.addEventListener("toggle", function (event) {
+      var card = event.target;
+      if (!card.classList || !card.classList.contains("fsw-card") || !card.open) return;
+      if (SETTINGS.ONE_AT_A_TIME) {
+        cards.forEach(function (other) {
+          if (other !== card && other.open) other.open = false;
+        });
+      }
+      if (SETTINGS.SCROLL_INTO_VIEW) {
+        window.requestAnimationFrame(function () {
+          try {
+            card.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "nearest" });
+          } catch (e) { /* older embedded browsers may not take options */ }
+        });
+      }
+    }, true);
+
+    if (SETTINGS.OPEN_FIRST) cards[0].open = true;
+  }
+
+  function boot(root) {
+    render(root);
+    enhance(root);
+  }
+
+  var roots = document.querySelectorAll(".fsw");
+  if (roots.length) {
+    Array.prototype.forEach.call(roots, boot);
+  } else if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () {
+      Array.prototype.forEach.call(document.querySelectorAll(".fsw"), boot);
+    });
+  }
+})();
+</script>
+
+<script>
+/* Iframe auto-height: when this page is embedded in an iframe,
+   tell the parent page how tall the wine list is whenever that
+   changes (a category opening or closing, images loading, window
+   resizes). The component itself is measured, so this works the
+   same whether the page is hosted as a full HTML document or as
+   this raw file. The matching listener ships in embed-code.html.
+   This does nothing when the page is not embedded, so the same
+   file can be pasted straight into a Shorthand Custom HTML
+   section. */
+(function () {
+  if (!window.parent || window.parent === window) return;
+  var root = document.querySelector(".fsw");
+  if (!root) return;
+  function post() {
+    var rect = root.getBoundingClientRect();
+    var top = rect.top + (window.scrollY || window.pageYOffset || 0);
+    window.parent.postMessage({ type: "fsw-height", height: Math.ceil(rect.height + top + 8) }, "*");
+  }
+  window.addEventListener("load", post);
+  window.addEventListener("resize", post);
+  if (window.ResizeObserver) new ResizeObserver(post).observe(root);
+  setTimeout(post, 300);
+})();
+</script>
+
+<!-- FIVE STAR WINES COMPONENT: END -->
+</body>
+</html>
